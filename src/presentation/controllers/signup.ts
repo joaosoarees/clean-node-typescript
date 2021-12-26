@@ -4,11 +4,18 @@ import { MissingParamError, InvalidParamError } from '../errors'
 
 import { badRequest, serverError } from '../helpers/http-helper'
 
+import { IAddAccount } from '../../domain/usecases/add-account'
+
 export class SignUpController implements IController {
   private readonly emailValidator: IEmailValidator
+  private readonly addAccount: IAddAccount
 
-  constructor (emailValidator: IEmailValidator) {
+  constructor (
+    emailValidator: IEmailValidator,
+    addAccount: IAddAccount
+  ) {
     this.emailValidator = emailValidator
+    this.addAccount = addAccount
   }
 
   handle (httpRequest: IHttpRequest): IHttpResponse {
@@ -21,7 +28,7 @@ export class SignUpController implements IController {
         }
       }
 
-      const { email, password, passwordConfirmation } = httpRequest.body
+      const { name, email, password, passwordConfirmation } = httpRequest.body
 
       if (password !== passwordConfirmation) {
         return badRequest(new InvalidParamError('passwordConfirmation'))
@@ -32,6 +39,12 @@ export class SignUpController implements IController {
       if (!isEmailValid) {
         return badRequest(new InvalidParamError('email'))
       }
+
+      this.addAccount.add({
+        name,
+        email,
+        password
+      })
 
       return {
         statusCode: 200,
